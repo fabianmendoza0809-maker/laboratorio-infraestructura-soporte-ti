@@ -1,0 +1,20 @@
+# Archivos privados
+.env
+.env.*
+*.pem
+*.key
+*.pfx
+*.p12
+
+# Máquinas virtuales e instaladores
+*.iso
+*.vhd
+*.vhdx
+*.vmcx
+*.vmgs
+
+# Archivos temporales
+Thumbs.db
+Desktop.ini
+*.tmp
+*.log
