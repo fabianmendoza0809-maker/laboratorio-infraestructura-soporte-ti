@@ -69,3 +69,25 @@ Los resultados registrados corresponden a las verificaciones ejecutadas durante 
 ## 8. Estado
 
 **Resultado general: pruebas de los servicios principales completadas satisfactoriamente.**
+
+## Pruebas de Active Directory, SMB y NTFS
+
+| ID | Prueba | Resultado esperado | Resultado obtenido |
+|---|---|---|---|
+| AD-01 | Organización de OU | Estructura correcta | Correcto |
+| AD-02 | Creación de grupos | Tres grupos departamentales | Correcto |
+| AD-03 | Membresía de usuarios | Cada usuario en su grupo | Correcto |
+| SMB-01 | Creación de recursos compartidos | Tres recursos disponibles | Correcto |
+| SMB-02 | Acceso de agomez | Administración permitida | Correcto |
+| SMB-03 | Acceso de cramirez | SoporteTI permitido | Correcto |
+| SMB-04 | Acceso de lmartinez | Ventas permitido | Correcto |
+| NTFS-01 | agomez accede a SoporteTI y Ventas | Acceso denegado | Correcto |
+| NTFS-02 | cramirez accede a Administración y Ventas | Acceso denegado | Correcto |
+| NTFS-03 | lmartinez accede a Administración y SoporteTI | Acceso denegado | Correcto |
+| CLI-01 | Acceso desde Windows 11 | Autenticación SMB correcta | Correcto |
+
+### Conclusión
+
+Las pruebas confirmaron que los tres usuarios pueden autenticarse desde Windows 11 y acceder a los recursos compartidos correspondientes a sus departamentos. También se verificó la denegación de acceso a los recursos de otros departamentos.
+
+Durante estas pruebas, el equipo Windows 11 todavía pertenecía a WORKGROUP. Su incorporación al dominio queda como una actividad posterior.

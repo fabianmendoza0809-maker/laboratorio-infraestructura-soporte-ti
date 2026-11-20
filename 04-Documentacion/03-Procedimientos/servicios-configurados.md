@@ -242,3 +242,58 @@ Los servidores utilizan direcciones estáticas y el cliente Windows utiliza asig
 ## 9. Estado
 
 Los procedimientos descritos corresponden a servicios implementados y comprobados durante el desarrollo del laboratorio.
+
+## Administración de usuarios, grupos y recursos compartidos
+
+### 1. Organización de Active Directory
+
+Se organizó el dominio `labred.local` mediante la unidad organizativa principal `EmpresaLab`, que contiene las siguientes unidades:
+
+- Administracion
+- Equipos
+- Grupos
+- SoporteTI
+- Ventas
+
+### 2. Usuarios y grupos
+
+Se crearon tres grupos globales de seguridad:
+
+- `GG_Administracion`
+- `GG_SoporteTI`
+- `GG_Ventas`
+
+Se crearon tres usuarios y se asignaron a sus respectivos grupos:
+
+| Usuario | Departamento | Grupo |
+|---|---|---|
+| agomez | Administración | GG_Administracion |
+| cramirez | Soporte TI | GG_SoporteTI |
+| lmartinez | Ventas | GG_Ventas |
+
+### 3. Recursos compartidos SMB
+
+Se crearon tres recursos compartidos en el servidor `SRV-DC01`:
+
+| Recurso | Ruta local |
+|---|---|
+| Administracion | C:\EmpresaLab\Administracion |
+| SoporteTI | C:\EmpresaLab\SoporteTI |
+| Ventas | C:\EmpresaLab\Ventas |
+
+Se asignó permiso Change al grupo correspondiente a cada departamento y permiso Full a los administradores del dominio.
+
+### 4. Permisos NTFS
+
+Se protegió la herencia de permisos en las tres carpetas departamentales y se establecieron permisos explícitos:
+
+- SYSTEM: FullControl.
+- BUILTIN\Administradores: FullControl.
+- LABRED\Admins. del dominio: FullControl.
+- Grupo departamental correspondiente: Modify.
+
+### 5. Acceso desde Windows 11
+
+Se verificó el acceso mediante SMB utilizando credenciales de dominio desde un equipo Windows 11 que inicialmente pertenecía a WORKGROUP.
+
+Los tres usuarios pudieron autenticarse y acceder a sus respectivos recursos compartidos sin necesidad de unir previamente el equipo cliente al dominio.

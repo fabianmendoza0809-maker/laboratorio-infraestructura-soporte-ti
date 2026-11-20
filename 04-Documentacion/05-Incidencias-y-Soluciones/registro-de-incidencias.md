@@ -226,8 +226,41 @@ Se optó por encender las máquinas virtuales por etapas, según las pruebas que
 
 Esta estrategia permitió completar las pruebas de integración sin requerir que toda la infraestructura permaneciera encendida permanentemente.
 
-## 8. Conclusión
+## 8. Registro de incidencias del laboratorio
+
+### INC-01. Error al crear recursos compartidos SMB
+
+**Síntoma:** `New-SmbShare` devolvía Windows System Error 1332.
+
+**Causa:** se utilizó el nombre `LABRED\Domain Admins`, pero el grupo administrativo del dominio tenía el nombre localizado `LABRED\Admins. del dominio`.
+
+**Solución:** verificar el nombre del grupo mediante Active Directory y utilizar el nombre correcto en el parámetro `-FullAccess`.
+
+**Resultado:** creación correcta de los tres recursos compartidos.
+
+### INC-02. Error de autenticación SMB
+
+**Síntoma:** Windows 11 devolvía el error de sistema 86 al intentar acceder con `agomez`.
+
+**Causa:** la contraseña utilizada no era válida para la cuenta.
+
+**Solución:** restablecer la contraseña desde Active Directory y repetir la autenticación SMB.
+
+**Resultado:** autenticación correcta y acceso al recurso de Administración.
+
+### INC-03. Permisos NTFS heredados
+
+**Síntoma:** las carpetas departamentales conservaban permisos heredados de `BUILTIN\Usuarios`.
+
+**Causa:** las carpetas todavía heredaban entradas de permisos de su carpeta principal.
+
+**Solución:** realizar una copia de seguridad de las ACL, proteger la herencia y establecer permisos explícitos para SYSTEM, administradores y el grupo departamental correspondiente.
+
+**Resultado:** configuración NTFS aplicada y verificada mediante `Get-Acl`.
+
+## 9. Conclusión
 
 Las incidencias registradas permitieron practicar diagnóstico de conectividad, resolución DNS, configuración DHCP, administración de servicios y revisión de componentes de virtualización.
 
 Cada problema se abordó mediante comandos de diagnóstico, comprobaciones de configuración y pruebas posteriores para verificar los resultados.
+
