@@ -349,21 +349,35 @@ Las pruebas permitieron comprobar la conectividad entre equipos, la resolución 
 
 ## 7. Organización del repositorio
 
-```text
-laboratorio-infraestructura-soporte-ti/
-│
-├── README.md
-├── 01-Windows-Server/
-├── 02-Ubuntu-Server/
-├── 03-DNS-DHCP/
-└── 04-Documentacion/
-    ├── README.md
-    ├── 01-Arquitectura/
-    ├── 02-Direccionamiento-IP/
-    ├── 03-Procedimientos/
-    ├── 04-Pruebas-y-Resultados/
-    └── 05-Incidencias-y-Soluciones/
-```
+El repositorio está organizado en carpetas de configuración, evidencias y documentación técnica.
+
+| Carpeta | Contenido |
+|---|---|
+| [01-Windows-Server](./01-Windows-Server/) | Configuración y evidencias de Windows Server |
+| [02-Ubuntu-Server](./02-Ubuntu-Server/) | Configuración y evidencias de Ubuntu Server |
+| [03-DNS-DHCP](./03-DNS-DHCP/) | Configuración y evidencias de los servicios DNS y DHCP |
+| [04-Documentacion](./04-Documentacion/) | Documentación técnica del laboratorio |
+
+### Documentación técnica
+
+El [índice de documentación](./04-Documentacion/README.md) permite consultar las siguientes secciones:
+
+| Sección | Documento |
+|---|---|
+| Arquitectura | [Topología de red](./04-Documentacion/01-Arquitectura/TOPOLOGIA-DE-RED.md) |
+| Direccionamiento IP | [Plan de direccionamiento IP](./04-Documentacion/02-Direccionamiento-IP/plan-de-direccionamiento.md) |
+| Procedimientos | [Servicios configurados](./04-Documentacion/03-Procedimientos/servicios-configurados.md) |
+| Procedimientos | [Mantenimiento de Ubuntu](./04-Documentacion/03-Procedimientos/mantenimiento-ubuntu.md) |
+| Pruebas | [Matriz de pruebas y resultados](./04-Documentacion/04-Pruebas-y-Resultados/matriz-de-pruebas.md) |
+| Incidencias | [Registro de incidencias y soluciones](./04-Documentacion/05-Incidencias-y-Soluciones/registro-de-incidencias.md) |
+
+También puedes explorar las carpetas completas:
+
+- [01-Arquitectura](./04-Documentacion/01-Arquitectura/)
+- [02-Direccionamiento-IP](./04-Documentacion/02-Direccionamiento-IP/)
+- [03-Procedimientos](./04-Documentacion/03-Procedimientos/)
+- [04-Pruebas-y-Resultados](./04-Documentacion/04-Pruebas-y-Resultados/)
+- [05-Incidencias-y-Soluciones](./04-Documentacion/05-Incidencias-y-Soluciones/)
 
 Las carpetas contienen evidencias de las configuraciones, procedimientos y verificaciones realizadas.
 
@@ -376,7 +390,6 @@ Las carpetas contienen evidencias de las configuraciones, procedimientos y verif
 - Fortalecer la documentación de las pruebas de respaldo y recuperación.
 
 Las actividades de mantenimiento preventivo, diagnóstico de servicios Linux y recuperación controlada de configuraciones ya fueron implementadas y se encuentran documentadas en las carpetas del laboratorio.
-
 
 ## 9. Autoría
 
