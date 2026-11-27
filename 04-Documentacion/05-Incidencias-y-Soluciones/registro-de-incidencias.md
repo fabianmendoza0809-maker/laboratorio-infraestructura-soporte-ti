@@ -446,6 +446,35 @@ Las directivas se encontraron correctamente vinculadas y aplicadas. Se verificó
 
 **Evidencias:** `01-Windows-Server/11-Diagnostico-Incidencias/05-Acceso-SMB/`
 
+### INC-09 — Interrupción controlada de Apache
+
+**Servidor:** SRV-UBUNTU01  
+**Cliente de validación:** CLIENTE-W11-01  
+**Servicio:** Apache HTTP, TCP 80  
+**Tipo:** Simulación de incidencia en laboratorio
+
+**Descripción:** Se detuvo manualmente Apache para practicar el diagnóstico y la recuperación de un servicio web.
+
+**Diagnóstico:**
+- `systemctl is-active apache2` reportó `inactive`.
+- El servicio presentó el estado `inactive (dead)`.
+- Los registros confirmaron la detención correcta a las 21:13:39 UTC.
+
+**Causa identificada:** Detención manual y controlada del servicio Apache.
+
+**Acciones de recuperación:**
+1. Se validó la configuración mediante `apache2ctl configtest`, con resultado `Syntax OK`.
+2. Se inició Apache mediante `systemctl start apache2`.
+3. El servicio reportó `active`.
+4. Los registros confirmaron el inicio a las 21:15:44 UTC.
+5. Se verificó la conectividad TCP 80 y la respuesta HTTP desde CLIENTE-W11-01.
+
+**Resultado:** Servicio Apache recuperado y acceso web restablecido desde el cliente Windows. Tiempo de interrupción registrado: 2 minutos y 5 segundos.
+
+**Evidencias:** `02-Ubuntu-Server/06-Administracion-y-Diagnostico/12-incidencia-apache-detenido.png` y `13-recuperacion-apache.png`.
+
+**Estado:** Resuelta.
+
 ## 9. Conclusión
 
 Las incidencias registradas permitieron practicar diagnóstico de conectividad, resolución DNS, configuración DHCP, administración de servicios y revisión de componentes de virtualización.
