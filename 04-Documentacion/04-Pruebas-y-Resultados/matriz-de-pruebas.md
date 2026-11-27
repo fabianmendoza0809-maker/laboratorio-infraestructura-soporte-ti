@@ -213,6 +213,27 @@ Los resultados registrados corresponden a las verificaciones ejecutadas durante 
 - `02-Ubuntu-Server/08-Copias-de-Seguridad/03-prueba-recuperacion.png`
 - `02-Ubuntu-Server/08-Copias-de-Seguridad/04-integridad-backup.png`
 
+### Validación de conectividad desde CLIENTE-W11-01
+
+**Equipo de origen:** CLIENTE-W11-01  
+**Dirección IPv4:** 192.168.50.101  
+**Fecha de la prueba HTTP:** 27 de noviembre de 2026
+
+| Prueba | Destino | Resultado observado | Estado |
+|---|---|---|---|
+| Configuración DHCP | SRV-DC01 | IPv4 192.168.50.101/24; DHCP y DNS 192.168.50.10; puerta de enlace 192.168.50.1 | Correcto |
+| DNS directo | srv-dc01.labred.local | Registro A; conexión TCP al destino 192.168.50.10 | Correcto |
+| DNS directo | srv-ubuntu01.labred.local | Registro A; conexión TCP al destino 192.168.50.20 | Correcto |
+| DNS inverso | 192.168.50.10 | SRV-DC01.labred.local | Correcto |
+| DNS inverso | 192.168.50.20 | srv-ubuntu01.labred.local | Correcto |
+| DNS TCP 53 | SRV-DC01 | TcpTestSucceeded: True | Correcto |
+| SSH TCP 22 | SRV-UBUNTU01 | TcpTestSucceeded: True | Correcto |
+| HTTP TCP 80 | SRV-UBUNTU01 | TcpTestSucceeded: True | Correcto |
+| Solicitud HTTP | srv-ubuntu01.labred.local | HTTP/1.1 200 OK; Apache/2.4.66 (Ubuntu) | Correcto |
+
+**Conclusión:** El cliente recibió configuración de red mediante DHCP, resolvió los nombres de los servidores y estableció conexiones TCP con DNS, SSH y Apache. La solicitud HTTP mediante el nombre DNS recibió una respuesta 200 OK.
+
+**Pendiente:** Registrar las pruebas ICMP y mostrar explícitamente las direcciones IPv4 devueltas por los registros A.
 
 ### Conclusión
 
