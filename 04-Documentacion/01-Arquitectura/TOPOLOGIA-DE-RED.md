@@ -1,105 +1,108 @@
 # Topología de red del laboratorio
 
-## 1. Descripción general
+## 1. Descripción
 
-El laboratorio utiliza Hyper-V sobre Windows 11 Pro para ejecutar tres máquinas virtuales conectadas mediante un conmutador virtual de tipo interno denominado `Switch-lab`.
+El laboratorio utiliza una infraestructura virtualizada mediante Hyper-V sobre Windows 11 Pro. Las máquinas virtuales se conectan a un conmutador virtual interno denominado `Switch-lab`, dentro de la red `192.168.50.0/24`.
 
-La red permite la comunicación entre el equipo anfitrión, Windows Server, Ubuntu Server y el cliente Windows.
+La arquitectura integra un controlador de dominio Windows Server, un servidor Ubuntu y un cliente Windows 11 unido al dominio.
 
-Se configuró NAT en el anfitrión para proporcionar conectividad hacia redes externas.
+El equipo anfitrión proporciona conectividad externa mediante NAT, mientras que Windows Server administra los servicios de identidad, DNS y DHCP del laboratorio.
 
 ## 2. Componentes de la infraestructura
 
-| Equipo | Nombre | Dirección IP | Función |
-|---|---|---|---|
-| Anfitrión | Windows 11 Pro | 192.168.50.1 | Virtualización y NAT |
-| Servidor Windows | SRV-DC01 | 192.168.50.10 | Active Directory, DNS y DHCP |
-| Servidor Linux | SRV-UBUNTU01 | 192.168.50.20 | Linux, SSH y Apache |
-| Cliente | CLIENTE-WIN11 | 192.168.50.100 | Pruebas de servicios de red |
+| Equipo | Dirección IPv4 | Función |
+|---|---|---|
+| Anfitrión Windows 11 Pro | 192.168.50.1 | Hyper-V, conmutador virtual y NAT |
+| SRV-DC01 | 192.168.50.10 | AD DS, DNS, DHCP, GPO y SMB |
+| SRV-UBUNTU01 | 192.168.50.20 | Ubuntu Server, SSH y Apache |
+| CLIENTE-W11-01 | 192.168.50.101 | Cliente Windows 11 unido al dominio, con DHCP |
 
-## 3. Diagrama lógico
+La dirección del cliente corresponde a la concesión DHCP observada durante las pruebas. No es una dirección estática.
+
+## 3. Esquema lógico
 
 ```text
-                 INTERNET
-                    |
-             Red del anfitrión
-                    |
-             Windows 11 Pro
-                    |
-           NAT-Laboratorio
-                    |
-        vEthernet (Switch-lab)
-             192.168.50.1
-                    |
-             Switch-lab
-             (Interno)
-                    |
-       +------------+-------------+
-       |            |             |
-       |            |             |
-   SRV-DC01    SRV-UBUNTU01   CLIENTE-WIN11
-   Windows       Ubuntu         Windows
-   Server        Server         11
-       |            |             |
-  192.168.50.10 192.168.50.20 192.168.50.100
-       |
-  AD DS / DNS
-     / DHCP
+                  Red externa / Internet
+                           |
+                  Equipo anfitrión
+                  Windows 11 Pro
+                           |
+                  NAT-Laboratorio
+                           |
+              vEthernet 192.168.50.1
+                           |
+                      Switch-lab
+                    192.168.50.0/24
+                           |
+          +----------------+----------------+
+          |                |                |
+      SRV-DC01        SRV-UBUNTU01     CLIENTE-W11-01
+  192.168.50.10      192.168.50.20    192.168.50.101
+          |                |                |
+      AD DS / DNS       SSH / Apache      Dominio
+      DHCP / SMB                          DHCP / GPO
+      GPO
 ```
 
-## 4. Funciones de los servidores
+## 4. Configuración de red
 
-### SRV-DC01
+- Red: `192.168.50.0/24`.
+- Máscara: `255.255.255.0`.
+- Conmutador virtual: `Switch-lab`, tipo interno.
+- Puerta de enlace: `192.168.50.1`.
+- NAT: `NAT-Laboratorio`.
+- DNS interno: `192.168.50.10`.
+- Dominio: `labred.local`.
 
-Servidor principal del dominio `labred.local`.
+## 5. Funciones de los equipos
 
-Servicios implementados:
+### 5.1. SRV-DC01
 
-- Active Directory Domain Services.
-- DNS.
-- DHCP.
-- Reenviadores DNS externos.
+Servidor Windows Server 2022 que proporciona:
 
-### SRV-UBUNTU01
+- Active Directory Domain Services para el dominio `labred.local`.
+- DNS para la resolución de nombres internos y externos.
+- DHCP para la asignación automática de parámetros de red.
+- Recursos compartidos SMB con permisos departamentales.
+- Directivas de grupo para usuarios y equipos del dominio.
 
-Servidor Linux conectado a la red interna.
+### 5.2. SRV-UBUNTU01
 
-Servicios implementados:
+Servidor Ubuntu Server con dirección estática `192.168.50.20`.
 
-- SSH para administración remota.
-- Apache para publicación web.
-- Resolución DNS mediante Windows Server.
+Proporciona acceso remoto mediante SSH y publica una página web mediante Apache. Utiliza el DNS interno del laboratorio para resolver nombres del dominio y consultas externas.
 
-### CLIENTE-WIN11
+### 5.3. CLIENTE-W11-01
 
-Equipo de pruebas conectado a la red virtual.
+Cliente Windows 11 Enterprise unido al dominio `labred.local`.
 
-Funciones:
+Se utiliza para comprobar:
 
-- Obtener una dirección IP mediante DHCP.
-- Consultar el servidor DNS.
-- Comprobar conectividad con los servidores.
-- Acceder a la página web mediante nombre DNS.
+- Asignación automática de parámetros de red mediante DHCP.
+- Resolución DNS de los servidores.
+- Conectividad con Windows Server y Ubuntu Server.
+- Autenticación de usuarios del dominio.
+- Acceso autorizado a recursos SMB departamentales.
+- Aplicación de directivas de grupo y mapeo de unidades.
+- Acceso al sitio web interno de Apache.
 
-## 5. Comunicación entre equipos
+## 6. Comunicaciones y servicios
 
-Se comprobaron las siguientes comunicaciones:
+| Origen | Destino | Servicio |
+|---|---|---|
+| Cliente Windows | SRV-DC01 | DNS, DHCP, AD DS, SMB y GPO |
+| Cliente Windows | SRV-UBUNTU01 | SSH y HTTP |
+| SRV-UBUNTU01 | SRV-DC01 | Resolución DNS |
+| Servidores y cliente | Anfitrión | Puerta de enlace y NAT |
 
-- Windows 11 anfitrión hacia `SRV-DC01`.
-- Windows 11 anfitrión hacia `SRV-UBUNTU01`.
-- `CLIENTE-WIN11` hacia `SRV-DC01`.
-- `CLIENTE-WIN11` hacia `SRV-UBUNTU01`.
-- Resolución del nombre `srv-ubuntu01.labred.local`.
-- Acceso web mediante HTTP.
+## 7. Consideraciones de recursos
 
-## 6. Consideraciones de virtualización
+El equipo anfitrión dispone de 16 GB de RAM y un SSD de 512 GB.
 
-Las máquinas virtuales se conectan a `Switch-lab`, un conmutador interno de Hyper-V.
+Las máquinas virtuales se administran de manera escalonada según los servicios y las pruebas requeridas. Esta estrategia permite realizar prácticas de integración y diagnóstico sin mantener todos los equipos encendidos permanentemente.
 
-Debido a la memoria RAM disponible en el equipo anfitrión, las pruebas que requieren varios equipos se realizan encendiendo las máquinas virtuales por etapas cuando es necesario.
+## 8. Estado de la infraestructura
 
-La infraestructura no requiere mantener todas las máquinas virtuales encendidas permanentemente.
+La infraestructura principal está implementada. Se han realizado pruebas de conectividad, resolución DNS, asignación DHCP, integración del cliente al dominio, acceso a recursos compartidos y aplicación de directivas de grupo.
 
-## 7. Estado
-
-**Implementado:** red virtual, comunicación entre equipos, conectividad externa mediante NAT y pruebas de acceso a los servicios configurados.
+La topología sirve como referencia para los procedimientos, las pruebas y el registro de incidencias del laboratorio.

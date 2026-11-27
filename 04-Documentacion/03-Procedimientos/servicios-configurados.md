@@ -1,128 +1,137 @@
-# Procedimientos de servicios configurados
+# Servicios configurados
 
 ## 1. Objetivo
 
-Documentar los principales procedimientos realizados durante la implementación del laboratorio de infraestructura TI.
+Documentar los servicios implementados en el laboratorio de infraestructura, sus parámetros de configuración, las pruebas de funcionamiento y las evidencias disponibles.
 
-Los procedimientos incluyen la configuración de Active Directory, DNS, DHCP, SSH y Apache.
+El entorno integra Windows Server 2022, Ubuntu Server y un cliente Windows 11 mediante una red virtual interna de Hyper-V.
 
-## 2. Active Directory
+## 2. Resumen de servicios
 
-### 2.1. Implementación
+| Servicio | Equipo | Configuración principal |
+|---|---|---|
+| Active Directory DS | SRV-DC01 | Dominio `labred.local` |
+| DNS | SRV-DC01 | `192.168.50.10` |
+| DHCP | SRV-DC01 | Ámbito `LAN-LABRED` |
+| SMB | SRV-DC01 | Recursos departamentales |
+| GPO | SRV-DC01 | Seguridad y unidades de red |
+| SSH | SRV-UBUNTU01 | TCP 22 |
+| Apache | SRV-UBUNTU01 | HTTP TCP 80 |
+| NAT | Anfitrión Hyper-V | `NAT-Laboratorio` |
 
-Se instaló el rol Active Directory Domain Services en Windows Server 2022.
+## 3. Active Directory Domain Services
 
-Posteriormente, el servidor se promovió a controlador de dominio mediante la creación de un nuevo bosque.
+### 3.1. Dominio
 
-Configuración:
+Se implementó un bosque de Active Directory con los siguientes parámetros:
 
 - Servidor: `SRV-DC01`.
-- Dominio: `labred.local`.
-- NetBIOS: `LABRED`.
+- Dominio DNS: `labred.local`.
+- Nombre NetBIOS: `LABRED`.
+- Nivel funcional del dominio: Windows Server 2016.
+- Dirección IPv4: `192.168.50.10/24`.
 
-### 2.2. Unidades organizativas
+### 3.2. Unidades organizativas
 
-Se creó la siguiente estructura:
+La estructura de la organización es:
 
 ```text
 EmpresaLab
 ├── Administracion
 ├── SoporteTI
-└── Ventas
+├── Ventas
+├── Grupos
+└── Equipos
 ```
 
-Se creó el usuario de prueba `cramirez` dentro de `SoporteTI`.
+### 3.3. Usuarios y grupos
 
-### 2.3. Comprobación
+Se crearon grupos globales de seguridad para representar los departamentos.
+
+| Usuario | Departamento | Grupo |
+|---|---|---|
+| agomez | Administración | GG_Administracion |
+| cramirez | Soporte TI | GG_SoporteTI |
+| lmartinez | Ventas | GG_Ventas |
+
+Los usuarios se ubicaron en sus unidades organizativas correspondientes y se asociaron a sus grupos de seguridad.
+
+### 3.4. Verificación
+
+Ejecutar en PowerShell con las herramientas de administración de Active Directory:
 
 ```powershell
 Get-ADDomain
 Get-ADForest
-Get-Service DNS,NTDS
+Get-ADUser -Filter * -Properties Department
+Get-ADGroup -Filter *
+Get-ADGroupMember GG_Administracion
+Get-ADGroupMember GG_SoporteTI
+Get-ADGroupMember GG_Ventas
+Get-Service NTDS,DNS
 ```
 
-## 3. DNS
+Evidencias: `01-Windows-Server/03-Active-Directory/` y `01-Windows-Server/04-Usuarios-yGrupos/`.
 
-### 3.1. Configuración
+## 4. Servicio DNS
 
-El servicio DNS se implementó en `SRV-DC01`, utilizando la dirección `192.168.50.10`.
+### 4.1. Zonas y registros
 
-Se verificaron las zonas:
+El servidor DNS administra la zona `labred.local` y los registros necesarios para el funcionamiento del dominio.
 
-- `labred.local`
-- `_msdcs.labred.local`
+Se verificaron:
 
-Se comprobaron registros A, NS, SOA y SRV asociados al dominio.
+- Zona directa `labred.local`.
+- Zona `_msdcs.labred.local`.
+- Registros A, NS, SOA y SRV.
+- Registro A de `srv-ubuntu01.labred.local`, asociado a `192.168.50.20`.
+- Zona inversa `50.168.192.in-addr.arpa`.
+- Registros PTR para las direcciones `192.168.50.10` y `192.168.50.20`.
 
-### 3.2. Reenviadores DNS
+Se configuraron reenviadores DNS hacia `8.8.8.8` y `8.8.4.4` para la resolución de nombres externos.
 
-Se configuraron los siguientes reenviadores:
+### 4.2. Verificación
 
-```powershell
-Set-DnsServerForwarder -IPAddress 8.8.8.8,8.8.4.4
-```
-
-### 3.3. Registro DNS de Ubuntu
-
-Se creó un registro A:
-
-- Nombre: `srv-ubuntu01`.
-- Dirección IPv4: `192.168.50.20`.
-- Nombre completo: `srv-ubuntu01.labred.local`.
-
-### 3.4. Pruebas
+Desde Windows Server o el cliente:
 
 ```powershell
-nslookup labred.local 127.0.0.1
-nslookup google.com 127.0.0.1
+Resolve-DnsName srv-dc01.labred.local
+Resolve-DnsName srv-ubuntu01.labred.local
+nslookup 192.168.50.10
+nslookup 192.168.50.20
 ```
 
 Desde Ubuntu:
 
 ```bash
-nslookup labred.local 192.168.50.10
-nslookup google.com 192.168.50.10
-```
-
-Se comprobó también la resolución mediante:
-
-```bash
-resolvectl query labred.local
+resolvectl status
+resolvectl query srv-dc01.labred.local
+resolvectl query srv-ubuntu01.labred.local
 resolvectl query google.com
 ```
 
-## 4. DHCP
+Evidencias: `03-DNS-DHCP/01-Configuracion-DNS/` y `03-DNS-DHCP/02-Registros-DNS/`.
 
-### 4.1. Instalación
+## 5. Servicio DHCP
 
-Se instaló el rol DHCP Server en Windows Server 2022.
+Se instaló y autorizó el rol DHCP en Windows Server.
 
-Se verificó su instalación:
+### 5.1. Ámbito
 
-```powershell
-Get-WindowsFeature DHCP
-Get-Service DHCPServer
-```
-
-El servidor se autorizó en Active Directory.
-
-### 4.2. Creación del ámbito
-
-Se creó el ámbito `LAN-LABRED` con el rango:
-
-`192.168.50.100 - 192.168.50.200`
-
-Se configuraron las opciones:
-
-| Opción | Valor |
+| Parámetro | Valor |
 |---|---|
-| 003 Router | 192.168.50.1 |
-| 006 DNS | 192.168.50.10 |
-| 015 Dominio | labred.local |
+| Nombre | LAN-LABRED |
+| Red | 192.168.50.0/24 |
+| Rango | 192.168.50.100 - 192.168.50.200 |
+| Máscara | 255.255.255.0 |
+| Puerta de enlace | 192.168.50.1 |
+| DNS | 192.168.50.10 |
+| Dominio DNS | labred.local |
+| Concesión | 8 días |
 
-Duración de concesión: 8 días.
+El cliente inicial `CLIENTE-WIN11` obtuvo la dirección `192.168.50.100`. Posteriormente, el cliente integrado al dominio `CLIENTE-W11-01` obtuvo `192.168.50.101`.
 
-### 4.3. Verificación
+### 5.2. Verificación
 
 ```powershell
 Get-DhcpServerInDC
@@ -132,168 +141,267 @@ Get-DhcpServerv4Statistics
 Get-DhcpServerv4Lease -ScopeId 192.168.50.0
 ```
 
-### 4.4. Prueba desde el cliente
-
-En `CLIENTE-WIN11`:
+En el cliente:
 
 ```cmd
-ipconfig /release
-ipconfig /renew
 ipconfig /all
 ```
 
-Se comprobó la asignación de `192.168.50.100` y la recepción de los parámetros de red.
+Se verificó la entrega de dirección IP, puerta de enlace, DNS y sufijo de dominio.
 
-## 5. SSH en Ubuntu Server
+Evidencias: `03-DNS-DHCP/03-Configuracion-DHCP/` y `03-DNS-DHCP/04-Pruebas/`.
 
-### 5.1. Habilitación
+## 6. Recursos compartidos SMB y permisos NTFS
 
-Se habilitó el servicio SSH:
+### 6.1. Recursos
 
-```bash
-sudo systemctl enable --now ssh
-```
+| Recurso SMB | Ruta local | Grupo autorizado |
+|---|---|---|
+| Administracion | C:\EmpresaLab\Administracion | GG_Administracion |
+| SoporteTI | C:\EmpresaLab\SoporteTI | GG_SoporteTI |
+| Ventas | C:\EmpresaLab\Ventas | GG_Ventas |
 
-Se comprobó el estado:
+### 6.2. Permisos
 
-```bash
-sudo systemctl status ssh
-```
+En cada recurso compartido se concedió:
 
-También se verificó la escucha del puerto TCP 22:
+- Control total a los administradores del dominio.
+- Cambio al grupo departamental correspondiente.
 
-```bash
-ss -tlnp | grep :22
-```
+En NTFS se configuraron permisos explícitos y se protegió la herencia de permisos:
 
-### 5.2. Conexión remota
+- `SYSTEM`: control total.
+- `BUILTIN\Administradores`: control total.
+- `LABRED\Admins. del dominio`: control total.
+- Grupo departamental correspondiente: modificación.
 
-Desde Windows 11 se estableció una conexión mediante:
+Se realizaron pruebas de acceso autorizado y de denegación de acceso a recursos de otros departamentos.
+
+### 6.3. Verificación
 
 ```powershell
+Get-SmbShare
+Get-SmbShareAccess -Name Administracion
+Get-SmbShareAccess -Name SoporteTI
+Get-SmbShareAccess -Name Ventas
+Get-Acl C:\EmpresaLab\Administracion
+Get-Acl C:\EmpresaLab\SoporteTI
+Get-Acl C:\EmpresaLab\Ventas
+```
+
+Desde el cliente se pueden comprobar las rutas:
+
+```text
+\\SRV-DC01\Administracion
+\\SRV-DC01\SoporteTI
+\\SRV-DC01\Ventas
+```
+
+Evidencias: `01-Windows-Server/05-Recursos-Compartidos-y-Permisos/`.
+
+## 7. Integración del cliente Windows y GPO
+
+### 7.1. Cliente de dominio
+
+Se incorporó `CLIENTE-W11-01` al dominio `labred.local` y se ubicó su cuenta de equipo en la unidad organizativa `Equipos`.
+
+El cliente utiliza DHCP y el DNS interno del controlador de dominio.
+
+### 7.2. Directivas de grupo
+
+Se configuraron las siguientes GPO:
+
+| GPO | Propósito |
+|---|---|
+| GPO-Politica-Contrasenas-Dominio | Política de contraseñas y bloqueo |
+| GPO-Mapeo-Unidad-Administracion | Unidad A: |
+| GPO-Mapeo-Unidad-SoporteTI | Unidad S: |
+| GPO-Mapeo-Unidad-Ventas | Unidad V: |
+| GPO-Seguridad-Equipos | Inactividad de equipos |
+
+Las unidades se asignaron según el departamento y se configuraron para reconectarse al iniciar sesión.
+
+La directiva de seguridad de equipos estableció un tiempo de inactividad de 600 segundos.
+
+### 7.3. Política de contraseñas
+
+- Longitud mínima: 8 caracteres.
+- Complejidad habilitada.
+- Historial: 5 contraseñas.
+- Edad mínima: 1 día.
+- Edad máxima: 90 días.
+- Umbral de bloqueo: 5 intentos.
+- Duración del bloqueo: 15 minutos.
+- Ventana de observación: 15 minutos.
+- Almacenamiento reversible: deshabilitado.
+
+### 7.4. Verificación
+
+Desde el cliente:
+
+```cmd
+gpupdate /force
+gpresult /r
+whoami /groups
+```
+
+Desde Windows Server:
+
+```powershell
+Get-ADComputer CLIENTE-W11-01 -Properties DistinguishedName
+Get-GPO -All
+Get-ADDefaultDomainPasswordPolicy
+```
+
+Se verificó la aplicación de las directivas y el acceso a las unidades departamentales.
+
+Evidencias: carpetas `06-Integracion-Cliente-Dominio` a `10-Seguridad-Equipos-GPO` dentro de `01-Windows-Server/`.
+
+## 8. Administración remota mediante SSH
+
+En `SRV-UBUNTU01` se habilitó OpenSSH Server para la administración remota desde Windows.
+
+- Dirección: `192.168.50.20`.
+- Puerto TCP: 22.
+- Servicio: `ssh`.
+- Usuario administrativo: `adminlinux`.
+
+### Verificación
+
+```bash
+systemctl status ssh
+systemctl is-enabled ssh
+sudo ss -tlnp
+```
+
+Desde Windows:
+
+```powershell
+Test-NetConnection srv-ubuntu01.labred.local -Port 22
 ssh adminlinux@192.168.50.20
 ```
 
-Se verificó el acceso a la terminal remota de Ubuntu.
+Se comprobó la conexión remota y la persistencia del servicio después de reiniciar Ubuntu.
 
-## 6. Apache
+Evidencias: `02-Ubuntu-Server/04Servicios-Web/` y `02-Ubuntu-Server/05Validacion-y-Persistencia/`.
 
-### 6.1. Instalación
+## 9. Servicio web Apache
 
-Se instaló Apache en Ubuntu:
+Se instaló Apache en Ubuntu Server y se publicó una página web personalizada para identificar el laboratorio.
 
-```bash
-sudo apt install apache2 -y
-```
+- Servicio: `apache2`.
+- Puerto TCP: 80.
+- Dirección: `192.168.50.20`.
+- URL: `http://srv-ubuntu01.labred.local`.
 
-Se habilitó e inició el servicio:
-
-```bash
-sudo systemctl enable --now apache2
-```
-
-### 6.2. Verificación
+### 9.1. Configuración y validación
 
 ```bash
-sudo systemctl status apache2 --no-pager
+systemctl status apache2
+systemctl is-enabled apache2
+sudo apache2ctl configtest
 curl -I http://localhost
 ```
 
-Se comprobó que Apache respondiera correctamente.
-
-### 6.3. Página personalizada
-
-Se modificó el archivo:
-
-`/var/www/html/index.html`
-
-Se creó una página identificativa del laboratorio con información del servidor y del dominio.
-
-### 6.4. Acceso desde otros equipos
-
-Se verificó el acceso mediante:
+Se configuró el nombre del servidor en:
 
 ```text
-http://192.168.50.20
+/etc/apache2/conf-available/servername.conf
 ```
 
-Posteriormente, se comprobó el acceso mediante:
+Con el contenido:
 
-```text
-http://srv-ubuntu01.labred.local
+```apache
+ServerName srv-ubuntu01.labred.local
 ```
 
-## 7. NAT y conectividad
+La configuración se habilitó y verificó mediante:
 
-Se configuró NAT en el anfitrión Windows 11 para la red interna:
+```bash
+sudo a2enconf servername
+sudo apache2ctl configtest
+sudo systemctl reload apache2
+```
 
-`192.168.50.0/24`
+Desde el cliente Windows se realizaron pruebas de resolución DNS, conectividad TCP y acceso HTTP:
 
-Se estableció la ruta predeterminada de los servidores hacia `192.168.50.1`.
+```powershell
+Test-NetConnection srv-ubuntu01.labred.local -Port 80
+curl.exe -I http://srv-ubuntu01.labred.local
+```
 
-Se verificó el acceso a direcciones externas y la resolución DNS externa.
+La respuesta HTTP documentada fue `200 OK`.
 
-## 8. Consideraciones operativas
+Evidencias: `02-Ubuntu-Server/04Servicios-Web/` y `02-Ubuntu-Server/05Validacion-y-Persistencia/`.
 
-Debido a la disponibilidad de memoria RAM del equipo anfitrión, las máquinas virtuales se encendieron por etapas durante algunas pruebas.
+## 10. Red virtual y NAT
 
-Los servidores utilizan direcciones estáticas y el cliente Windows utiliza asignación automática mediante DHCP.
+La infraestructura utiliza el conmutador interno `Switch-lab` y la red `192.168.50.0/24`.
 
-## 9. Estado
+El anfitrión dispone de la dirección `192.168.50.1` en su adaptador virtual y proporciona conectividad externa mediante `NAT-Laboratorio`.
 
-Los procedimientos descritos corresponden a servicios implementados y comprobados durante el desarrollo del laboratorio.
+Ubuntu utiliza configuración estática mediante Netplan:
 
-## Administración de usuarios, grupos y recursos compartidos
+- Interfaz: `eth0`.
+- Dirección: `192.168.50.20/24`.
+- Puerta de enlace: `192.168.50.1`.
+- DNS: `192.168.50.10`.
+- Dominio de búsqueda: `labred.local`.
 
-### 1. Organización de Active Directory
+### Verificación
 
-Se organizó el dominio `labred.local` mediante la unidad organizativa principal `EmpresaLab`, que contiene las siguientes unidades:
+En el anfitrión:
 
-- Administracion
-- Equipos
-- Grupos
-- SoporteTI
-- Ventas
+```powershell
+Get-VMSwitch
+Get-NetNat
+Get-NetIPAddress -AddressFamily IPv4
+```
 
-### 2. Usuarios y grupos
+En Ubuntu:
 
-Se crearon tres grupos globales de seguridad:
+```bash
+ip addr
+ip route
+resolvectl status
+```
 
-- `GG_Administracion`
-- `GG_SoporteTI`
-- `GG_Ventas`
+## 11. Pruebas de integración
 
-Se crearon tres usuarios y se asignaron a sus respectivos grupos:
+Las pruebas de integración contemplaron:
 
-| Usuario | Departamento | Grupo |
-|---|---|---|
-| agomez | Administración | GG_Administracion |
-| cramirez | Soporte TI | GG_SoporteTI |
-| lmartinez | Ventas | GG_Ventas |
+1. Conectividad del cliente con Windows Server y Ubuntu.
+2. Resolución DNS directa e inversa.
+3. Asignación DHCP al cliente.
+4. Autenticación de usuarios del dominio.
+5. Aplicación de GPO y mapeo de unidades.
+6. Acceso permitido y denegado a recursos SMB.
+7. Conectividad TCP hacia SSH y Apache.
+8. Acceso HTTP mediante nombre DNS.
+9. Persistencia de servicios Linux después de reinicios.
 
-### 3. Recursos compartidos SMB
+Comandos utilizados desde el cliente:
 
-Se crearon tres recursos compartidos en el servidor `SRV-DC01`:
+```powershell
+ipconfig /all
+ping 192.168.50.10
+ping 192.168.50.20
+Resolve-DnsName srv-dc01.labred.local
+Resolve-DnsName srv-ubuntu01.labred.local
+Test-NetConnection 192.168.50.10 -Port 53
+Test-NetConnection 192.168.50.20 -Port 22
+Test-NetConnection 192.168.50.20 -Port 80
+curl.exe -I http://srv-ubuntu01.labred.local
+```
 
-| Recurso | Ruta local |
-|---|---|
-| Administracion | C:\EmpresaLab\Administracion |
-| SoporteTI | C:\EmpresaLab\SoporteTI |
-| Ventas | C:\EmpresaLab\Ventas |
+## 12. Administración de recursos virtualizados
 
-Se asignó permiso Change al grupo correspondiente a cada departamento y permiso Full a los administradores del dominio.
+Debido a la disponibilidad de 16 GB de RAM del equipo anfitrión, las máquinas virtuales se administraron de manera escalonada.
 
-### 4. Permisos NTFS
+Las pruebas se realizaron encendiendo los servidores y el cliente según los servicios requeridos, sin mantener necesariamente toda la infraestructura activa simultáneamente.
 
-Se protegió la herencia de permisos en las tres carpetas departamentales y se establecieron permisos explícitos:
+## 13. Estado de implementación
 
-- SYSTEM: FullControl.
-- BUILTIN\Administradores: FullControl.
-- LABRED\Admins. del dominio: FullControl.
-- Grupo departamental correspondiente: Modify.
+La infraestructura principal se encuentra implementada. Se dispone de evidencias de configuración de Active Directory, DNS, DHCP, SMB, GPO, SSH y Apache, así como de pruebas de conectividad e integración.
 
-### 5. Acceso desde Windows 11
-
-Se verificó el acceso mediante SMB utilizando credenciales de dominio desde un equipo Windows 11 que inicialmente pertenecía a WORKGROUP.
-
-Los tres usuarios pudieron autenticarse y acceder a sus respectivos recursos compartidos sin necesidad de unir previamente el equipo cliente al dominio.
+Las actividades de mantenimiento, diagnóstico y recuperación se documentan en los procedimientos y el registro de incidencias del laboratorio.

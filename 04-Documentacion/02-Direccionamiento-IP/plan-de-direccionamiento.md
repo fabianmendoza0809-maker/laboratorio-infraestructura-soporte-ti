@@ -1,115 +1,185 @@
-# Plan de direccionamiento IP
+# Plan de direccionamiento IP del laboratorio
 
-## 1. Información de la red
+## 1. Descripción de la red
 
-La red del laboratorio utiliza direccionamiento IPv4 privado y una máscara de subred `/24`.
+El laboratorio utiliza una red IPv4 privada para interconectar las máquinas virtuales Windows Server, Ubuntu Server y Windows 11 cliente mediante el conmutador interno `Switch-lab` de Hyper-V.
 
-| Parámetro | Valor |
-|---|---|
-| Dirección de red | 192.168.50.0 |
-| Prefijo | /24 |
-| Máscara | 255.255.255.0 |
-| Dirección de broadcast | 192.168.50.255 |
-| Puerta de enlace | 192.168.50.1 |
-| Dominio interno | labred.local |
+El equipo anfitrión proporciona la puerta de enlace y la conectividad externa mediante NAT.
 
-## 2. Direcciones IP asignadas
-
-| Dispositivo | Dirección IP | Método de asignación |
-|---|---|---|
-| Adaptador virtual del anfitrión | 192.168.50.1 | Estática |
-| SRV-DC01 | 192.168.50.10 | Estática |
-| SRV-UBUNTU01 | 192.168.50.20 | Estática |
-| CLIENTE-WIN11 | 192.168.50.100 | DHCP |
-
-## 3. Configuración del servidor Windows
-
-**Nombre:** SRV-DC01
-
-- Dirección IPv4: `192.168.50.10`.
-- Máscara: `255.255.255.0`.
-- DNS: `127.0.0.1` y `::1`.
-- Puerta de enlace: `192.168.50.1`.
-
-El servidor utiliza una dirección estática porque proporciona servicios centrales de dominio, DNS y DHCP.
-
-## 4. Configuración del servidor Ubuntu
-
-**Nombre:** SRV-UBUNTU01
-
-- Dirección IPv4: `192.168.50.20`.
-- Prefijo: `/24`.
-- Interfaz: `eth0`.
-- Ruta predeterminada: `192.168.50.1`.
-- Servidor DNS: `192.168.50.10`.
-- Dominio de búsqueda: `labred.local`.
-
-La configuración de red se administra mediante Netplan.
-
-## 5. Ámbito DHCP
-
-El servidor DHCP está instalado en `SRV-DC01`.
+### Parámetros generales
 
 | Parámetro | Configuración |
 |---|---|
-| Nombre del ámbito | LAN-LABRED |
-| Identificador de red | 192.168.50.0 |
-| Máscara | 255.255.255.0 |
-| Dirección inicial | 192.168.50.100 |
-| Dirección final | 192.168.50.200 |
-| Puerta de enlace | 192.168.50.1 |
-| DNS | 192.168.50.10 |
-| Dominio | labred.local |
+| Red | `192.168.50.0/24` |
+| Máscara | `255.255.255.0` |
+| Dirección de red | `192.168.50.0` |
+| Dirección de difusión | `192.168.50.255` |
+| Puerta de enlace | `192.168.50.1` |
+| Servidor DNS | `192.168.50.10` |
+| Dominio DNS | `labred.local` |
+| Conmutador virtual | `Switch-lab` |
+| Tipo de conmutador | Interno |
+| NAT | `NAT-Laboratorio` |
+
+La red dispone de 254 direcciones IPv4 de host utilizables. Las direcciones se distribuyen entre el anfitrión, los servidores y el ámbito DHCP.
+
+## 2. Distribución de direcciones IPv4
+
+| Equipo | Dirección IPv4 | Asignación | Función |
+|---|---|---|---|
+| Anfitrión Windows 11 Pro | `192.168.50.1` | Estática | Puerta de enlace, Hyper-V y NAT |
+| `SRV-DC01` | `192.168.50.10` | Estática | AD DS, DNS, DHCP, SMB y GPO |
+| `SRV-UBUNTU01` | `192.168.50.20` | Estática | Ubuntu Server, SSH y Apache |
+| `CLIENTE-W11-01` | `192.168.50.101` | DHCP | Cliente Windows 11 unido al dominio |
+
+**Nota:** la dirección `192.168.50.101` corresponde a la concesión DHCP observada durante las pruebas del cliente `CLIENTE-W11-01`. Puede cambiar si el servidor asigna otra dirección disponible.
+
+## 3. Configuración del servidor Windows
+
+El servidor `SRV-DC01` utiliza una dirección IPv4 estática para mantener disponibles los servicios de infraestructura.
+
+### Parámetros de red
+
+- Dirección IPv4: `192.168.50.10`.
+- Máscara: `255.255.255.0`.
+- Puerta de enlace: `192.168.50.1`.
+- DNS preferido: `127.0.0.1`.
+- Dominio: `labred.local`.
+- Nombre NetBIOS: `LABRED`.
+
+La dirección estática evita que los clientes y servidores dependan de una concesión DHCP para localizar los servicios del controlador de dominio.
+
+## 4. Configuración del servidor Ubuntu
+
+El servidor `SRV-UBUNTU01` utiliza una dirección IPv4 estática configurada mediante Netplan.
+
+### Parámetros de red
+
+- Interfaz: `eth0`.
+- Dirección IPv4: `192.168.50.20/24`.
+- Puerta de enlace: `192.168.50.1`.
+- Servidor DNS: `192.168.50.10`.
+- Dominio de búsqueda: `labred.local`.
+
+La configuración se encuentra en:
+
+`/etc/netplan/00-installer-config.yaml`
+
+El servidor utiliza el DNS interno para resolver nombres del laboratorio y realizar consultas externas mediante los reenviadores configurados en Windows Server.
+
+## 5. Configuración del servicio DHCP
+
+El rol DHCP está instalado y autorizado en `SRV-DC01`.
+
+### Ámbito LAN-LABRED
+
+| Parámetro | Configuración |
+|---|---|
+| Identificador del ámbito | `192.168.50.0` |
+| Rango inicial | `192.168.50.100` |
+| Rango final | `192.168.50.200` |
+| Máscara | `255.255.255.0` |
+| Puerta de enlace | `192.168.50.1` |
+| Servidor DNS | `192.168.50.10` |
+| Dominio DNS | `labred.local` |
 | Duración de concesión | 8 días |
 
-El ámbito contiene 101 direcciones disponibles para asignación dinámica.
+El rango contiene 101 direcciones posibles antes de considerar concesiones activas, exclusiones u otras restricciones.
 
-Las direcciones de los servidores y del adaptador virtual del anfitrión se encuentran fuera del rango DHCP.
+### Opciones DHCP
 
-## 6. NAT y conectividad externa
+- Opción 003: Router — `192.168.50.1`.
+- Opción 006: DNS Servers — `192.168.50.10`.
+- Opción 015: DNS Domain Name — `labred.local`.
 
-Se creó en el equipo anfitrión una configuración NAT denominada `NAT-Laboratorio`, asociada al prefijo:
+Se verificó la asignación automática de parámetros de red a los clientes Windows.
+
+Inicialmente se realizaron pruebas con `CLIENTE-WIN11`, que obtuvo la dirección `192.168.50.100`. Posteriormente, el cliente `CLIENTE-W11-01`, unido al dominio, obtuvo la dirección `192.168.50.101`.
+
+## 6. Configuración NAT y conectividad externa
+
+El equipo anfitrión utiliza el adaptador virtual asociado a `Switch-lab` con la dirección `192.168.50.1`.
+
+Se configuró el NAT `NAT-Laboratorio` para la red interna:
 
 `192.168.50.0/24`
 
-El siguiente salto utilizado por los servidores es `192.168.50.1`.
+Las máquinas virtuales utilizan `192.168.50.1` como puerta de enlace para acceder a redes externas.
 
-Esto permite que las máquinas virtuales accedan a recursos externos sin utilizar directamente la red física como su red de laboratorio.
+La conectividad externa depende de la conexión del anfitrión y de la configuración NAT.
 
-## 7. Servidores DNS
+## 7. Resolución DNS
 
-El servidor DNS interno es `192.168.50.10`.
+El servidor Windows proporciona resolución de nombres internos para el dominio `labred.local`.
 
-Se configuraron reenviadores externos:
+### Registros principales
 
-- `8.8.8.8`
-- `8.8.4.4`
+| Nombre | Tipo | Dirección o destino |
+|---|---|---|
+| `srv-dc01.labred.local` | A | `192.168.50.10` |
+| `srv-ubuntu01.labred.local` | A | `192.168.50.20` |
+| `192.168.50.10` | PTR | `srv-dc01.labred.local` |
+| `192.168.50.20` | PTR | `srv-ubuntu01.labred.local` |
 
-Se creó un registro A para:
+Se configuró la zona de búsqueda inversa `50.168.192.in-addr.arpa` para resolver las direcciones de los servidores.
 
-` srv-ubuntu01.labred.local `
+Los reenviadores DNS configurados en Windows Server son:
 
-Dirección asociada:
+- `8.8.8.8`.
+- `8.8.4.4`.
 
-`192.168.50.20`
+La resolución interna permite localizar los servidores por nombre, mientras que los reenviadores permiten resolver nombres externos.
 
-## 8. Verificaciones
+## 8. Pruebas y verificaciones
 
-Se comprobó el direccionamiento mediante:
+### Desde Windows Server
 
-```cmd
+```powershell
 ipconfig /all
+Get-DhcpServerv4Scope
+Get-DhcpServerv4OptionValue -ScopeId 192.168.50.0
+Get-DhcpServerv4Lease -ScopeId 192.168.50.0
+Get-DnsServerZone
 ```
 
-También se realizaron pruebas de conectividad:
+### Desde CLIENTE-W11-01
 
-```cmd
+```powershell
+ipconfig /all
 ping 192.168.50.10
 ping 192.168.50.20
+nslookup srv-dc01.labred.local
+nslookup srv-ubuntu01.labred.local
+nslookup 192.168.50.10
+nslookup 192.168.50.20
+Test-NetConnection 192.168.50.20 -Port 22
+Test-NetConnection 192.168.50.20 -Port 80
 ```
 
-La asignación DHCP se verificó desde el cliente Windows, que recibió la dirección `192.168.50.100`.
+### Desde Ubuntu Server
 
-## 9. Estado
+```bash
+ip addr
+ip route
+resolvectl status
+resolvectl query srv-dc01.labred.local
+resolvectl query google.com
+```
 
-**Implementado y probado:** direccionamiento estático de los servidores, red interna, NAT, DNS y asignación dinámica DHCP.
+## 9. Resultados
+
+Las pruebas permitieron verificar:
+
+- La comunicación entre los equipos de la red virtual.
+- La asignación automática de direcciones mediante DHCP.
+- La resolución DNS directa e inversa de los servidores.
+- La conectividad TCP con los servicios SSH y Apache.
+- El uso del servidor DNS interno por los equipos del laboratorio.
+
+La dirección del cliente se considera dinámica, mientras que las direcciones del anfitrión y los servidores se mantienen estáticas.
+
+## 10. Estado
+
+El esquema de direccionamiento IPv4 está implementado y se han realizado pruebas de conectividad, resolución DNS y asignación DHCP.
+
+Este documento sirve como referencia para la administración de la red, la incorporación de nuevos equipos y el diagnóstico de incidencias de conectividad.

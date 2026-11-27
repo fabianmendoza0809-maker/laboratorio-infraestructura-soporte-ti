@@ -8,31 +8,32 @@ Su propósito es describir la arquitectura implementada, el direccionamiento de 
 
 ### 01. Arquitectura
 
-Archivo: `01-Arquitectura/TOPOLOGIA-DE-RED.md`
+Archivo: [TOPOLOGIA-DE-RED.md](01-Arquitectura/TOPOLOGIA-DE-RED.md)
 
 Describe los componentes del laboratorio, las máquinas virtuales, sus funciones y la conexión entre los equipos.
 
 ### 02. Direccionamiento IP
 
-Archivo: `02-Direccionamiento-IP/plan-de-direccionamiento.md`
+Archivo: [plan-de-direccionamiento.md](02-Direccionamiento-IP/plan-de-direccionamiento.md)
 
 Contiene el esquema IPv4, las direcciones estáticas, el rango DHCP, el DNS y la puerta de enlace.
 
 ### 03. Procedimientos
 
-Archivo: `03-Procedimientos/servicios-configurados.md`
+Archivos:
 
-Documenta las principales actividades de configuración de Active Directory, DNS, DHCP, SSH y Apache.
+- [servicios-configurados.md](03-Procedimientos/servicios-configurados.md): documenta las principales actividades de configuración de Active Directory, DNS, DHCP, SSH y Apache.
+- [mantenimiento-ubuntu.md](03-Procedimientos/mantenimiento-ubuntu.md): documenta las actividades de mantenimiento y revisión del servidor Ubuntu.
 
 ### 04. Pruebas y resultados
 
-Archivo: `04-Pruebas-y-Resultados/matriz-de-pruebas.md`
+Archivo: [matriz-de-pruebas.md](04-Pruebas-y-Resultados/matriz-de-pruebas.md)
 
 Registra las verificaciones ejecutadas, los resultados observados y el estado de cada prueba.
 
 ### 05. Incidencias y soluciones
 
-Archivo: `05-Incidencias-y-Soluciones/registro-de-incidencias.md`
+Archivo: [registro-de-incidencias.md](05-Incidencias-y-Soluciones/registro-de-incidencias.md)
 
 Describe los problemas encontrados durante la implementación, las acciones de diagnóstico y los resultados obtenidos.
 
@@ -60,11 +61,11 @@ Se crearon tres grupos globales de seguridad:
 
 Se crearon tres usuarios y se asignaron a sus respectivos grupos:
 
-| Usuario | Departamento | Grupo |
-|---|---|---|
-| `agomez` | Administración | `GG_Administracion` |
-| `cramirez` | Soporte TI | `GG_SoporteTI` |
-| `lmartinez` | Ventas | `GG_Ventas` |
+| Usuario     | Departamento   | Grupo               |
+| ----------- | -------------- | ------------------- |
+| `agomez`    | Administración | `GG_Administracion` |
+| `cramirez`  | Soporte TI     | `GG_SoporteTI`      |
+| `lmartinez` | Ventas         | `GG_Ventas`         |
 
 Se verificaron las cuentas, su ubicación en las unidades organizativas y la pertenencia a los grupos correspondientes.
 
@@ -72,11 +73,11 @@ Se verificaron las cuentas, su ubicación en las unidades organizativas y la per
 
 Se crearon tres recursos compartidos en el servidor:
 
-| Recurso | Ruta local |
-|---|---|
+| Recurso          | Ruta local                     |
+| ---------------- | ------------------------------ |
 | `Administracion` | `C:\EmpresaLab\Administracion` |
-| `SoporteTI` | `C:\EmpresaLab\SoporteTI` |
-| `Ventas` | `C:\EmpresaLab\Ventas` |
+| `SoporteTI`      | `C:\EmpresaLab\SoporteTI`      |
+| `Ventas`         | `C:\EmpresaLab\Ventas`         |
 
 Se concedió permiso de modificación al grupo correspondiente a cada departamento y control total a los administradores del dominio.
 
@@ -93,9 +94,11 @@ La configuración se verificó mediante la inspección de las ACL de las carpeta
 
 ### 2.5. Acceso desde Windows 11
 
-Se verificó el acceso mediante SMB utilizando credenciales de dominio desde un equipo Windows 11 que inicialmente pertenece a `WORKGROUP`.
+Inicialmente se verificó el acceso mediante SMB utilizando credenciales de dominio desde un equipo Windows 11 perteneciente a `WORKGROUP`.
 
 El equipo cliente no necesita estar unido al dominio para realizar estas pruebas de autenticación SMB.
+
+Posteriormente, se integró el cliente Windows 11 `CLIENTE-W11-01` al dominio `labred.local`, permitiendo realizar pruebas de inicio de sesión con usuarios del dominio y aplicar directivas de grupo.
 
 Se comprobó que:
 
@@ -113,16 +116,21 @@ Las capturas de pantalla se encuentran organizadas en las carpetas correspondien
 Entre las evidencias disponibles se incluyen:
 
 - Creación y configuración de máquinas virtuales.
-- Instalación y configuración de Windows Server.
-- Configuración de dirección IP estática.
+- Instalación y configuración de Windows Server y Ubuntu Server.
+- Configuración de direcciones IP y servicios de red.
 - Creación y validación del dominio.
-- Servicios DNS y Active Directory.
+- Servicios DNS, DHCP y Active Directory.
 - Estructura de unidades organizativas.
 - Usuarios y grupos de seguridad.
 - Recursos compartidos SMB.
 - Permisos SMB y NTFS.
 - Pruebas de acceso autorizado y denegación entre departamentos.
+- Integración del cliente Windows 11 al dominio.
+- Configuración y verificación de directivas de grupo (GPO).
+- Administración de servicios y diagnóstico en Ubuntu Server.
+- Mantenimiento, respaldo y recuperación controlada de archivos de configuración.
 
+Las evidencias visuales complementan los procedimientos y resultados descritos en los archivos Markdown del proyecto.
 
 ## 4. Criterios de documentación
 
@@ -131,3 +139,4 @@ Entre las evidencias disponibles se incluyen:
 - Las capturas de pantalla se conservan en las carpetas de evidencias correspondientes.
 - No se incluyen contraseñas, claves privadas ni información confidencial.
 - Las actividades pendientes se identifican como tales y no se presentan como implementadas.
+- Los procedimientos y resultados se complementan con la matriz de pruebas y el registro de incidencias.
