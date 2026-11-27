@@ -258,6 +258,191 @@ Esta estrategia permitió completar las pruebas de integración sin requerir que
 
 **Resultado:** configuración NTFS aplicada y verificada mediante `Get-Acl`.
 
+### INC-04. Diagnóstico de conectividad entre cliente y servidores
+
+**Síntoma:**
+
+Se plantea un escenario de soporte en el que un usuario informa que no puede acceder al servidor Ubuntu ni visualizar la página web interna de la organización.
+
+**Diagnóstico:**
+
+Desde el equipo CLIENTE-W11-01 se realizaron pruebas de conectividad mediante PowerShell utilizando el comando `Test-NetConnection`.
+
+Se comprobaron los siguientes servicios:
+
+| Destino | Puerto | Servicio | Resultado |
+|---|---:|---|---|
+| 192.168.50.20 | 22 | SSH | Exitoso |
+| 192.168.50.20 | 80 | Apache HTTP | Exitoso |
+| SRV-DC01 (192.168.50.10) | 389 | LDAP | Exitoso |
+
+Las tres pruebas devolvieron `TcpTestSucceeded: True`.
+
+**Acciones de verificación:**
+
+- Revisar la configuración IP del cliente Windows 11.
+- Comprobar la comunicación con los servicios SSH y Apache de Ubuntu.
+- Verificar la conectividad LDAP con el controlador de dominio.
+- Comprobar el acceso web mediante el nombre DNS del servidor Ubuntu.
+- Revisar el estado del servicio Apache y sus registros.
+
+**Causa identificada:**
+
+No se identificó una falla en los tres servicios TCP comprobados. Las conexiones se establecieron correctamente.
+
+**Solución aplicada:**
+
+No fue necesario modificar la infraestructura durante estas pruebas, ya que los servicios comprobados respondieron correctamente.
+
+**Resultado:**
+
+Se confirmó la conectividad TCP desde CLIENTE-W11-01 hacia SRV-UBUNTU01 y SRV-DC01 para los servicios evaluados.
+
+Quedan pendientes de registrar las verificaciones del puerto DNS 53, las pruebas ICMP, el acceso web mediante nombre DNS y el estado local de Apache.
+
+**Estado:** Diagnóstico parcial satisfactorio. Pendiente completar las verificaciones.
+
+### INC-05. Configuración de resolución DNS inversa
+
+**Síntoma:**
+
+Las consultas DNS directas desde el equipo cliente funcionaban correctamente. Sin embargo, al consultar las direcciones IP de los servidores mediante `nslookup`, el sistema devolvía el mensaje `Non-existent domain`.
+
+**Diagnóstico:**
+
+Se verificó que el cliente utilizaba el servidor DNS `192.168.50.10` y que los registros directos resolvían correctamente:
+
+- `labred.local` → `192.168.50.10`
+- `srv-dc01.labred.local` → `192.168.50.10`
+- `srv-ubuntu01.labred.local` → `192.168.50.20`
+
+La revisión de las zonas DNS permitió comprobar que no existía una zona de búsqueda inversa para la red `192.168.50.0/24`.
+
+**Causa identificada:**
+
+No estaban configurados los registros PTR necesarios para relacionar las direcciones IP de los servidores con sus nombres DNS.
+
+**Solución aplicada:**
+
+1. Se creó la zona de búsqueda inversa `50.168.192.in-addr.arpa`.
+2. Se agregó el registro PTR para `192.168.50.10`, asociado a `srv-dc01.labred.local`.
+3. Se agregó el registro PTR para `192.168.50.20`, asociado a `srv-ubuntu01.labred.local`.
+4. Se realizaron nuevas consultas desde el cliente Windows 11.
+
+**Resultado esperado:**
+
+Las consultas DNS directas e inversas responden correctamente, permitiendo resolver nombres de host a direcciones IP y direcciones IP a nombres de host.
+
+**Evidencias:**
+
+`01-Windows-Server/11-Diagnostico-Incidencias/02-DNS/`
+
+**Estado:** Pendiente de validación final.
+
+### INC-06. Diagnóstico y validación del servicio DHCP
+
+**Síntoma:**
+
+Se requiere comprobar que el servidor Windows Server proporciona automáticamente la configuración de red a los equipos cliente del laboratorio.
+
+**Diagnóstico:**
+
+Se verificó que el servidor DHCP `192.168.50.10` se encontraba autorizado en Active Directory y que el ámbito `192.168.50.0/24` estaba activo.
+
+Se comprobaron los siguientes parámetros:
+
+- Rango de direcciones: `192.168.50.100 - 192.168.50.200`.
+- Puerta de enlace: `192.168.50.1`.
+- Servidor DNS: `192.168.50.10`.
+- Sufijo DNS: `labred.local`.
+
+También se revisaron las concesiones y estadísticas del servicio.
+
+**Pruebas realizadas:**
+
+1. Verificación de la autorización del servidor DHCP.
+2. Comprobación del ámbito y sus opciones.
+3. Consulta de las concesiones activas.
+4. Revisión de las estadísticas DHCP.
+5. Liberación y renovación de la dirección IP del cliente mediante `ipconfig /release` e `ipconfig /renew`.
+6. Comprobación de la configuración de red posterior a la renovación.
+7. Pruebas de conectividad con Windows Server y Ubuntu.
+
+**Resultado:**
+
+El servicio DHCP funcionó correctamente. El equipo `CLIENTE-W11-01` recibió nuevamente la dirección `192.168.50.101`, con máscara `255.255.255.0`, puerta de enlace `192.168.50.1` y servidor DNS `192.168.50.10`.
+
+El servidor registró tres concesiones activas, sin ofertas pendientes ni respuestas NAK.
+
+**Causa:** No se identificó una falla activa en el servicio durante las pruebas. Se realizó una validación preventiva de su funcionamiento.
+
+**Solución aplicada:** No fue necesario realizar cambios, ya que la configuración existente era correcta.
+
+**Evidencias:**
+
+`01-Windows-Server/11-Diagnostico-Incidencias/03-DHCP/`
+
+**Estado:** Resuelta. Servicio DHCP operativo y validado.
+
+### INC-07. Diagnóstico y validación de directivas de grupo (GPO)
+
+**Síntoma:**
+
+Se requiere comprobar que las directivas de grupo configuradas en Active Directory se aplican correctamente a los usuarios y equipos del dominio.
+
+**Diagnóstico:**
+
+Se verificó la existencia y vinculación de las directivas mediante PowerShell y los comandos `Get-GPO` y `Get-GPInheritance`.
+
+Se revisaron las políticas de contraseñas del dominio y las directivas relacionadas con el mapeo de unidades de red y la seguridad de los equipos.
+
+**Pruebas realizadas:**
+
+1. Consulta de las GPO existentes en el dominio.
+2. Verificación de los vínculos de las directivas con las unidades organizativas.
+3. Comprobación de la política efectiva de contraseñas.
+4. Actualización de directivas mediante `gpupdate /force`.
+5. Consulta de las políticas aplicadas mediante `gpresult`.
+6. Verificación de las unidades de red asignadas a los usuarios de Administración, Soporte TI y Ventas.
+7. Comprobación del parámetro de inactividad del equipo mediante el Registro de Windows.
+8. Generación de un informe HTML con `gpresult`.
+
+**Resultado:**
+
+Las directivas se encontraron correctamente vinculadas y aplicadas. Se verificó el mapeo de las unidades A:, S: y V: para sus respectivos usuarios y la configuración de inactividad de 600 segundos en el equipo cliente.
+
+**Causa:** No se identificó una falla activa en la aplicación de las directivas durante las pruebas. Se realizó una validación preventiva de su funcionamiento.
+
+**Solución aplicada:** No fue necesario modificar las directivas existentes.
+
+**Evidencias:**
+
+`01-Windows-Server/11-Diagnostico-Incidencias/04-GPO/`
+
+**Estado:** Resuelta. Directivas de grupo verificadas.
+
+## INC-08 — Validación de acceso SMB y permisos departamentales
+
+**Tipo:** Validación preventiva.
+
+**Equipos:** SRV-DC01 y CLIENTE-W11-01.
+
+**Descripción:** Se verificó la configuración de los recursos compartidos Administracion, SoporteTI y Ventas, así como sus permisos SMB y NTFS y el acceso de los usuarios del dominio.
+
+**Diagnóstico:** Se ejecutaron `Get-SmbShare`, `Get-SmbShareAccess` e `icacls` en SRV-DC01. Se comprobaron las rutas compartidas y las entradas de permisos de cada departamento.
+
+**Resultados:**
+- Los tres recursos compartidos corresponden a sus carpetas departamentales.
+- Los grupos GG_Administracion, GG_SoporteTI y GG_Ventas tienen permisos SMB Change y NTFS Modify sobre su recurso correspondiente.
+- SYSTEM y los grupos administrativos conservan control total NTFS.
+- Los usuarios acceden a sus unidades asignadas y no pueden acceder a los recursos de otros departamentos.
+
+**Conclusión:** La configuración de permisos SMB y NTFS funciona según el diseño de acceso departamental. No se identificaron fallos activos ni fue necesario realizar cambios.
+
+**Estado:** Validación completada.
+
+**Evidencias:** `01-Windows-Server/11-Diagnostico-Incidencias/05-Acceso-SMB/`
+
 ## 9. Conclusión
 
 Las incidencias registradas permitieron practicar diagnóstico de conectividad, resolución DNS, configuración DHCP, administración de servicios y revisión de componentes de virtualización.
