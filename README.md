@@ -75,13 +75,15 @@ El laboratorio simula componentes básicos de una infraestructura empresarial y 
 
 ### Cliente Windows
 
-- Nombre de máquina virtual: `CLIENTE-WIN11`.
-- Dirección IP obtenida mediante DHCP: `192.168.50.100`.
+- Nombre de máquina virtual: `CLIENTE-W11-01`.
+- Sistema operativo: Windows 11 Enterprise.
+- Dirección IP obtenida mediante DHCP: `192.168.50.101`.
 - Puerta de enlace: `192.168.50.1`.
 - Servidor DNS: `192.168.50.10`.
 - Sufijo DNS: `labred.local`.
-- Grupo de trabajo inicial: `WORKGROUP`.
-- Autenticación a recursos compartidos mediante credenciales del dominio.
+- Dominio: `labred.local`.
+
+El equipo cliente se encuentra unido al dominio y se utiliza para validar la autenticación de usuarios, las directivas de grupo, el acceso a recursos compartidos y la conectividad con los servidores Windows y Ubuntu.
 
 ### Red virtual
 
@@ -233,6 +235,68 @@ Debido a la disponibilidad de 16 GB de RAM del equipo anfitrión, las máquinas 
 
 Se realizaron pruebas de conectividad e integración encendiendo los servidores y el cliente según los servicios requeridos, sin necesidad de mantener toda la infraestructura activa simultáneamente.
 
+### 5.12. Implementación de directivas de grupo (GPO)
+
+Se configuraron directivas de grupo para centralizar políticas de seguridad y facilitar la administración de los equipos y usuarios del dominio.
+
+Las actividades realizadas incluyen:
+
+- Configuración de políticas de contraseñas y bloqueo de cuentas.
+- Creación de directivas para el mapeo automático de unidades de red por departamento.
+- Aplicación de configuraciones diferenciadas para los departamentos de Administración, Soporte TI y Ventas.
+- Configuración de una política de seguridad para los equipos del laboratorio.
+- Verificación de las directivas aplicadas mediante `gpupdate` y `gpresult`.
+
+### 5.13. Integración DNS y conectividad entre servidores
+
+Se integró Ubuntu Server con el servicio DNS del dominio `labred.local`.
+
+Se realizaron las siguientes actividades:
+
+- Creación del registro DNS A para `srv-ubuntu01.labred.local`.
+- Configuración de la resolución inversa mediante registros PTR.
+- Verificación de la resolución directa e inversa desde el cliente Windows.
+- Comprobación de la conectividad con los servicios DNS, SSH y HTTP.
+- Validación del acceso al servidor Apache mediante su nombre DNS.
+
+### 5.14. Administración y mantenimiento de Ubuntu Server
+
+Se realizaron actividades de administración preventiva y diagnóstico del servidor Linux.
+
+Las actividades incluyen:
+
+- Verificación del estado de los servicios SSH y Apache.
+- Revisión de los puertos de escucha y registros del sistema.
+- Consulta de actualizaciones disponibles mediante APT.
+- Simulación de actualizaciones y limpieza de paquetes.
+- Validación de la configuración de Apache mediante `apache2ctl configtest`.
+- Verificación de la persistencia de la configuración de red después de reiniciar el servidor.
+
+### 5.15. Respaldo y recuperación de configuraciones
+
+Se realizó una práctica de respaldo y recuperación controlada de configuraciones del servidor Ubuntu.
+
+El procedimiento incluyó:
+
+- Verificación de la integridad del archivo comprimido.
+- Inspección del contenido del respaldo.
+- Extracción de los archivos en un directorio temporal.
+- Comparación de la configuración de Netplan y archivos de prueba con sus originales.
+- Validación de la recuperación sin sobrescribir las configuraciones activas del servidor.
+
+### 5.16. Simulación y recuperación de una incidencia de Apache
+
+Se realizó una simulación controlada de interrupción del servicio Apache en Ubuntu Server.
+
+El ejercicio permitió practicar:
+
+- Identificación del estado de un servicio detenido.
+- Consulta de registros mediante `journalctl`.
+- Validación de la configuración antes de iniciar el servicio.
+- Recuperación del servicio Apache.
+- Verificación del acceso HTTP desde el cliente Windows.
+- Documentación de la causa, las acciones de recuperación y el resultado de la incidencia.
+
 ## 6. Pruebas y verificaciones
 
 Se utilizaron herramientas y comandos como:
@@ -305,11 +369,14 @@ Las carpetas contienen evidencias de las configuraciones, procedimientos y verif
 
 ## 8. Actividades de mejora pendientes
 
-- Ampliar las pruebas de administración y diagnóstico de infraestructura.
-- Documentar el mantenimiento preventivo y la actualización de paquetes en Ubuntu Server.
-- Incorporar nuevas evidencias de administración de servicios Linux.
-- Ampliar los diagramas y procedimientos técnicos del laboratorio.
-- Evaluar nuevas integraciones entre los servidores y los equipos cliente.
+- Ampliar los diagramas de arquitectura y documentación de los servicios implementados.
+- Incorporar procedimientos de recuperación ante nuevas incidencias.
+- Ampliar las pruebas de seguridad y administración de servidores.
+- Evaluar nuevas integraciones entre Windows Server, Ubuntu Server y los equipos cliente.
+- Fortalecer la documentación de las pruebas de respaldo y recuperación.
+
+Las actividades de mantenimiento preventivo, diagnóstico de servicios Linux y recuperación controlada de configuraciones ya fueron implementadas y se encuentran documentadas en las carpetas del laboratorio.
+
 
 ## 9. Autoría
 
