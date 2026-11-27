@@ -215,15 +215,17 @@ Las pruebas confirmaron que el acceso a las carpetas de otros departamentos era 
 
 ### 5.10. Cliente Windows y pruebas de integración
 
-Se creó una máquina virtual cliente conectada a `Switch-lab`.
+Se configuró una máquina virtual cliente Windows 11 conectada al conmutador virtual `Switch-lab`.
 
-Se configuró para obtener automáticamente su dirección IP y sus parámetros DNS.
+Inicialmente se realizaron pruebas de conectividad y acceso a recursos compartidos desde un equipo perteneciente a `WORKGROUP`, utilizando credenciales del dominio.
 
-Se verificó la asignación de `192.168.50.100`, la conectividad con Windows Server y Ubuntu, la resolución DNS y el acceso al sitio web publicado.
+Posteriormente, se incorporó el equipo `CLIENTE-W11-01` al dominio `labred.local`.
 
-Desde el cliente Windows 11, que permanece inicialmente en `WORKGROUP`, se probaron conexiones SMB utilizando credenciales de los usuarios del dominio.
+El cliente obtuvo mediante DHCP la dirección IPv4 `192.168.50.101`, con puerta de enlace `192.168.50.1` y servidor DNS `192.168.50.10`.
 
-Se comprobó el acceso autorizado y la restricción entre departamentos.
+Se realizaron pruebas de conectividad con los servidores Windows y Ubuntu, resolución de nombres DNS, acceso a recursos compartidos y aplicación de directivas de grupo.
+
+También se verificó el acceso autorizado a las carpetas departamentales y la denegación de acceso a recursos de otros departamentos.
 
 ### 5.11. Administración de recursos virtualizados
 
@@ -303,11 +305,11 @@ Las carpetas contienen evidencias de las configuraciones, procedimientos y verif
 
 ## 8. Actividades de mejora pendientes
 
-- Configurar y probar políticas de grupo (GPO).
-- Implementar y probar permisos de archivos y carpetas en Ubuntu.
-- Evaluar la unión del cliente Windows 11 al dominio.
-- Ampliar la documentación técnica y los diagramas.
-- Incorporar nuevas pruebas de administración y soporte de infraestructura.
+- Ampliar las pruebas de administración y diagnóstico de infraestructura.
+- Documentar el mantenimiento preventivo y la actualización de paquetes en Ubuntu Server.
+- Incorporar nuevas evidencias de administración de servicios Linux.
+- Ampliar los diagramas y procedimientos técnicos del laboratorio.
+- Evaluar nuevas integraciones entre los servidores y los equipos cliente.
 
 ## 9. Autoría
 

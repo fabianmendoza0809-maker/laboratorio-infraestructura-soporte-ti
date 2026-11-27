@@ -294,13 +294,13 @@ No se identificó una falla en los tres servicios TCP comprobados. Las conexione
 
 No fue necesario modificar la infraestructura durante estas pruebas, ya que los servicios comprobados respondieron correctamente.
 
-**Resultado:**
+**Resultado de las verificaciones:**
 
-Se confirmó la conectividad TCP desde CLIENTE-W11-01 hacia SRV-UBUNTU01 y SRV-DC01 para los servicios evaluados.
+Se confirmó la conectividad TCP desde `CLIENTE-W11-01` hacia los servicios SSH y Apache de `SRV-UBUNTU01`, así como hacia el servicio LDAP de `SRV-DC01`.
 
-Quedan pendientes de registrar las verificaciones del puerto DNS 53, las pruebas ICMP, el acceso web mediante nombre DNS y el estado local de Apache.
+Las verificaciones adicionales de DNS, conectividad ICMP y acceso HTTP mediante nombre de dominio se documentarán en la matriz de pruebas del laboratorio.
 
-**Estado:** Diagnóstico parcial satisfactorio. Pendiente completar las verificaciones.
+**Estado:** Conectividad TCP validada. Pendiente completar las comprobaciones adicionales de DNS y HTTP.
 
 ### INC-05. Configuración de resolución DNS inversa
 
@@ -329,15 +329,18 @@ No estaban configurados los registros PTR necesarios para relacionar las direcci
 3. Se agregó el registro PTR para `192.168.50.20`, asociado a `srv-ubuntu01.labred.local`.
 4. Se realizaron nuevas consultas desde el cliente Windows 11.
 
-**Resultado esperado:**
+**Resultado de la configuración:**
 
-Las consultas DNS directas e inversas responden correctamente, permitiendo resolver nombres de host a direcciones IP y direcciones IP a nombres de host.
+Se creó la zona de búsqueda inversa `50.168.192.in-addr.arpa` y se agregaron registros PTR para los servidores `192.168.50.10` y `192.168.50.20`.
+
+La resolución inversa se comprobará desde el cliente Windows 11 mediante consultas DNS a ambos servidores.
+
+**Estado:** Zona inversa configurada. Pendiente registrar la validación final desde el cliente.
 
 **Evidencias:**
 
 `01-Windows-Server/11-Diagnostico-Incidencias/02-DNS/`
 
-**Estado:** Pendiente de validación final.
 
 ### INC-06. Diagnóstico y validación del servicio DHCP
 
